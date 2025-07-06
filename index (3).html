@@ -1,0 +1,2097 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spotify Playlist Downloader Pro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-bg: #0a0a0a;
+            --secondary-bg: #1a1a1a;
+            --accent-bg: #2a2a2a;
+            --card-bg: #1f1f1f;
+            --primary-text: #ffffff;
+            --secondary-text: #b3b3b3;
+            --accent-color: #1db954;
+            --accent-hover: #1ed760;
+            --error-color: #ff6b6b;
+            --warning-color: #feca57;
+            --success-color: #48dbfb;
+            --info-color: #74b9ff;
+            --purple-color: #a29bfe;
+            --pink-color: #fd79a8;
+            --glow-color: #1db954;
+            --border-radius: 16px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            --glow-shadow: 0 0 20px rgba(29, 185, 84, 0.3);
+        }
+
+        /* Light Theme */
+        [data-theme="light"] {
+            --primary-bg: #f8f9fa;
+            --secondary-bg: #ffffff;
+            --accent-bg: #e9ecef;
+            --card-bg: #ffffff;
+            --primary-text: #212529;
+            --secondary-text: #6c757d;
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            --glow-shadow: 0 0 20px rgba(29, 185, 84, 0.2);
+        }
+
+        /* Cyberpunk Theme */
+        [data-theme="cyberpunk"] {
+            --primary-bg: #0d1117;
+            --secondary-bg: #161b22;
+            --accent-bg: #21262d;
+            --card-bg: #1c2128;
+            --primary-text: #00ff41;
+            --secondary-text: #7c3aed;
+            --accent-color: #ff0080;
+            --accent-hover: #ff1a8c;
+            --glow-color: #ff0080;
+            --glow-shadow: 0 0 20px rgba(255, 0, 128, 0.4);
+        }
+
+        /* Synthwave Theme */
+        [data-theme="synthwave"] {
+            --primary-bg: #1a0d2e;
+            --secondary-bg: #16213e;
+            --accent-bg: #0f3460;
+            --card-bg: #16213e;
+            --primary-text: #e94560;
+            --secondary-text: #f39c12;
+            --accent-color: #e94560;
+            --accent-hover: #ff6b9d;
+            --glow-color: #e94560;
+        }
+
+        /* Low-End Mode */
+        [data-performance="low"] {
+            --transition: none;
+            --shadow: none;
+            --glow-shadow: none;
+        }
+
+        [data-performance="low"] * {
+            animation: none !important;
+            transition: none !important;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--primary-bg);
+            color: var(--primary-text);
+            line-height: 1.6;
+            overflow-x: hidden;
+            transition: var(--transition);
+        }
+
+        .container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .background-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.1;
+            background: 
+                radial-gradient(circle at 20% 50%, var(--accent-color) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, var(--success-color) 0%, transparent 50%),
+                radial-gradient(circle at 40% 80%, var(--warning-color) 0%, transparent 50%),
+                radial-gradient(circle at 60% 60%, var(--purple-color) 0%, transparent 50%);
+            animation: float 20s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            33% { transform: translateY(-20px) rotate(120deg); }
+            66% { transform: translateY(-10px) rotate(240deg); }
+        }
+
+        .header {
+            background: var(--secondary-bg);
+            padding: 1rem 2rem;
+            border-bottom: 1px solid var(--accent-bg);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--accent-color);
+            text-shadow: 0 0 10px var(--glow-color);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo::before {
+            content: '🎵';
+            font-size: 2rem;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .theme-selector {
+            position: relative;
+        }
+
+        .theme-dropdown {
+            background: var(--accent-bg);
+            border: 1px solid var(--accent-bg);
+            color: var(--primary-text);
+            padding: 0.5rem 1rem;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .theme-dropdown:hover {
+            background: var(--accent-color);
+            transform: translateY(-2px);
+            box-shadow: var(--glow-shadow);
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: var(--border-radius);
+            background: var(--accent-bg);
+            font-size: 0.9rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--error-color);
+            animation: pulse 1.5s infinite;
+        }
+
+        .status-dot.connected {
+            background: var(--success-color);
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--accent-bg);
+            box-shadow: var(--shadow);
+            text-align: center;
+            transition: var(--transition);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--glow-shadow);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--accent-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: var(--secondary-text);
+            font-size: 0.9rem;
+        }
+
+        .auth-section {
+            background: linear-gradient(135deg, var(--secondary-bg), var(--accent-bg));
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 2rem;
+            text-align: center;
+            border: 1px solid var(--accent-bg);
+            box-shadow: var(--shadow);
+        }
+
+        .glow-button {
+            background: linear-gradient(45deg, var(--accent-color), var(--accent-hover));
+            border: none;
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--glow-shadow);
+        }
+
+        .glow-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(29, 185, 84, 0.5);
+        }
+
+        .glow-button:active {
+            transform: translateY(-1px);
+        }
+
+        .glow-button::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+            transform: rotate(45deg);
+            transition: var(--transition);
+            opacity: 0;
+        }
+
+        .glow-button:hover::before {
+            animation: shine 0.5s ease-in-out;
+        }
+
+        @keyframes shine {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); opacity: 0; }
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid var(--accent-bg);
+            overflow-x: auto;
+            padding-bottom: 1rem;
+        }
+
+        .tab {
+            background: var(--accent-bg);
+            border: none;
+            color: var(--secondary-text);
+            padding: 1rem 2rem;
+            cursor: pointer;
+            border-radius: var(--border-radius) var(--border-radius) 0 0;
+            transition: var(--transition);
+            position: relative;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tab:hover {
+            background: var(--secondary-bg);
+            transform: translateY(-2px);
+        }
+
+        .tab.active {
+            color: var(--accent-color);
+            background: var(--secondary-bg);
+            box-shadow: var(--glow-shadow);
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-color), var(--accent-hover));
+            border-radius: 2px;
+            box-shadow: 0 0 10px var(--glow-color);
+        }
+
+        .tab-content {
+            display: none;
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--accent-bg);
+            box-shadow: var(--shadow);
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .search-section {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .search-input {
+            flex: 1;
+            min-width: 300px;
+            background: var(--accent-bg);
+            border: 2px solid var(--accent-bg);
+            color: var(--primary-text);
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(29, 185, 84, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .search-filters {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-select {
+            background: var(--accent-bg);
+            border: 1px solid var(--accent-bg);
+            color: var(--primary-text);
+            padding: 0.75rem;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+        }
+
+        .playlist-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .playlist-item {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            border: 1px solid var(--accent-bg);
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        .playlist-item:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--glow-shadow);
+            border-color: var(--accent-color);
+        }
+
+        .playlist-header {
+            padding: 1.5rem;
+            background: linear-gradient(135deg, var(--accent-bg), var(--secondary-bg));
+            border-bottom: 1px solid var(--accent-bg);
+        }
+
+        .playlist-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .playlist-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            color: var(--primary-text);
+        }
+
+        .playlist-meta {
+            color: var(--secondary-text);
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .playlist-actions {
+            padding: 1rem 1.5rem;
+            display: flex;
+            gap: 1rem;
+        }
+
+        .playlist-toggle {
+            background: var(--accent-bg);
+            border: 1px solid var(--accent-bg);
+            color: var(--primary-text);
+            padding: 0.5rem 1rem;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: var(--transition);
+            flex: 1;
+        }
+
+        .playlist-toggle:hover {
+            background: var(--accent-color);
+            transform: translateY(-2px);
+        }
+
+        .playlist-songs {
+            max-height: 300px;
+            overflow-y: auto;
+            display: none;
+            background: var(--primary-bg);
+        }
+
+        .playlist-songs.expanded {
+            display: block;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from { max-height: 0; opacity: 0; }
+            to { max-height: 300px; opacity: 1; }
+        }
+
+        .song-item {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--accent-bg);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .song-item:hover {
+            background: var(--accent-bg);
+            transform: translateX(5px);
+        }
+
+        .song-item:last-child {
+            border-bottom: none;
+        }
+
+        .song-info {
+            flex: 1;
+        }
+
+        .song-title {
+            font-weight: 600;
+            color: var(--primary-text);
+            margin-bottom: 0.2rem;
+        }
+
+        .song-artist {
+            color: var(--secondary-text);
+            font-size: 0.9rem;
+        }
+
+        .song-actions {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .song-duration {
+            color: var(--secondary-text);
+            font-size: 0.9rem;
+            margin-right: 1rem;
+        }
+
+        .mini-button {
+            background: var(--accent-color);
+            border: none;
+            color: white;
+            padding: 0.5rem;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: var(--transition);
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mini-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(29, 185, 84, 0.4);
+        }
+
+        .download-status {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--secondary-text);
+            margin-left: 1rem;
+        }
+
+        .download-status.pending {
+            background: var(--warning-color);
+            animation: pulse 1s infinite;
+        }
+
+        .download-status.downloading {
+            background: var(--info-color);
+            animation: spin 1s linear infinite;
+        }
+
+        .download-status.completed {
+            background: var(--success-color);
+        }
+
+        .download-status.error {
+            background: var(--error-color);
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .progress-container {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 2rem;
+            border: 1px solid var(--accent-bg);
+            box-shadow: var(--shadow);
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 12px;
+            background: var(--accent-bg);
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-color), var(--success-color));
+            border-radius: 6px;
+            transition: width 0.3s ease;
+            position: relative;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .download-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .setting-group {
+            background: var(--accent-bg);
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--accent-bg);
+            box-shadow: var(--shadow);
+        }
+
+        .setting-group h4 {
+            color: var(--accent-color);
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .setting-item {
+            margin-bottom: 1rem;
+        }
+
+        .setting-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .setting-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--secondary-text);
+            font-weight: 500;
+        }
+
+        .setting-control {
+            width: 100%;
+            background: var(--primary-bg);
+            border: 1px solid var(--accent-bg);
+            color: var(--primary-text);
+            padding: 0.75rem;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+
+        .setting-control:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(29, 185, 84, 0.1);
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--accent-bg);
+            transition: var(--transition);
+            border-radius: 34px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background: white;
+            transition: var(--transition);
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background: var(--accent-color);
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(26px);
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            border-radius: var(--border-radius);
+            color: white;
+            font-weight: 500;
+            z-index: 1000;
+            animation: slideIn 0.3s ease-out;
+            max-width: 400px;
+        }
+
+        .notification.success {
+            background: var(--success-color);
+        }
+
+        .notification.error {
+            background: var(--error-color);
+        }
+
+        .notification.info {
+            background: var(--info-color);
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--accent-bg);
+            border-radius: 50%;
+            border-top-color: var(--accent-color);
+            animation: spin 1s linear infinite;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 1rem;
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .main-content {
+                padding: 1rem;
+            }
+
+            .tabs {
+                flex-direction: column;
+            }
+
+            .search-section {
+                flex-direction: column;
+            }
+
+            .playlist-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-bar {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body data-theme="dark" data-performance="high">
+    <div class="container">
+        <div class="background-animation"></div>
+        
+        <header class="header">
+            <div class="logo">Spotify Downloader Pro</div>
+            <div class="header-controls">
+                <div class="theme-selector">
+                    <select class="theme-dropdown" id="themeSelector" onchange="changeTheme()">
+                        <option value="dark">🌙 Dark</option>
+                        <option value="light">☀️ Light</option>
+                        <option value="cyberpunk">🤖 Cyberpunk</option>
+                        <option value="synthwave">🌆 Synthwave</option>
+                    </select>
+                </div>
+                <button class="theme-dropdown" onclick="togglePerformance()">
+                    ⚡ Performance
+                </button>
+                <div class="status-indicator">
+                    <div class="status-dot" id="statusDot"></div>
+                    <span id="statusText">Disconnected</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="stats-bar">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalPlaylists">0</div>
+                    <div class="stat-label">Playlists</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="totalSongs">0</div>
+                    <div class="stat-label">Songs Available</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="downloadedSongs">0</div>
+                    <div class="stat-label">Downloaded</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="queueSize">0</div>
+                    <div class="stat-label">In Queue</div>
+                </div>
+            </div>
+
+            <div class="auth-section" id="authSection">
+                <h2>🎵 Connect to Spotify</h2>
+                <p>Login to access your playlists and start downloading high-quality music</p>
+                <button class="glow-button" onclick="connectSpotify()">
+                    🎧 Connect Spotify Account
+                </button>
+            </div>
+
+            <div class="tabs">
+                <button class="tab active" onclick="showTab('playlists')">
+                    📋 Playlists
+                </button>
+                <button class="tab" onclick="showTab('search')">
+                    🔍 Search
+                </button>
+                <button class="tab" onclick="showTab('downloads')">
+                    📥 Downloads
+                </button>
+                <button class="tab" onclick="showTab('library')">
+                    📚 Library
+                </button>
+                <button class="tab" onclick="showTab('converter')">
+                    🔄 Converter
+                </button>
+                <button class="tab" onclick="showTab('settings')">
+                    ⚙️ Settings
+                </button>
+            </div>
+
+            <div id="playlists" class="tab-content active">
+                <div class="search-section">
+                    <input type="text" class="search-input" placeholder="Filter playlists..." id="playlistFilter">
+                    <button class="glow-button" onclick="refreshPlaylists()">
+                        🔄 Refresh
+                    </button>
+                </div>
+                <div class="playlist-grid" id="playlistGrid">
+                    <!-- Playlists will be loaded here -->
+                </div>
+            </div>
+
+            <div id="search" class="tab-content">
+                <div class="search-section">
+                    <input type="text" class="search-input" placeholder="Search songs, artists, albums..." id="searchInput">
+                    <div class="search-filters">
+                        <select class="filter-select" id="searchType">
+                            <option value="track">🎵 Tracks</option>
+                            <option value="artist">🎤 Artists</option>
+                            <option value="album">💿 Albums</option>
+                            <option value="playlist">📋 Playlists</option>
+                        </select>
+                        <select class="filter-select" id="searchMarket">
+                            <option value="US">🇺🇸 US</option>
+                            <option value="GB">🇬🇧 UK</option>
+                            <option value="DE">🇩🇪 Germany</option>
+                            <option value="FR">🇫🇷 France</option>
+                        </select>
+                    </div>
+                    <button class="glow-button" onclick="searchContent()">
+                        🔍 Search
+                    </button>
+                </div>
+                <div class="playlist-songs" id="searchResults">
+                    <!-- Search results will appear here -->
+                </div>
+            </div>
+
+            <div id="downloads" class="tab-content">
+                <div class="progress-container">
+                    <div class="progress-header">
+                        <h3>Download Progress</h3>
+                        <div class="download-actions">
+                            <button class="glow-button" onclick="pauseDownloads()">
+                                ⏸️ Pause
+                            </button>
+                            <button class="glow-button" onclick="clearCompleted()">
+                                🗑️ Clear Completed
+                            </button>
+                        </div>
+                    </div>
+                    <div class="progress-info">
+                        <span id="progressText">Ready to download...</span>
+                        <span id="progressPercent">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="playlist-songs" id="downloadList">
+                    <!-- Download queue will appear here -->
+                </div>
+            </div>
+
+            <div id="library" class="tab-content">
+                <h3>📚 Your Music Library</h3>
+                <div class="search-section">
+                    <input type="text" class="search-input" placeholder="Search your downloads..." id="librarySearch">
+                    <div class="search-filters">
+                        <select class="filter-select" id="librarySort">
+                            <option value="recent">📅 Recently Added</option>
+                            <option value="title">🔤 Title A-Z</option>
+                            <option value="artist">🎤 Artist A-Z</option>
+                            <option value="size">📊 File Size</option>
+                        </select>
+                        <select class="filter-select" id="libraryView">
+                            <option value="list">📋 List View</option>
+                            <option value="grid">⚏ Grid View</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="playlist-songs" id="libraryContent">
+                    <!-- Downloaded files will appear here -->
+                </div>
+            </div>
+
+            <div id="converter" class="tab-content">
+                <h3>🔄 Audio Converter</h3>
+                <div class="setting-group">
+                    <h4>Convert Local Files</h4>
+                    <div class="setting-item">
+                        <label class="setting-label">Select Audio Files</label>
+                        <input type="file" class="setting-control" multiple accept="audio/*" id="converterFiles">
+                    </div>
+                    <div class="setting-item">
+                        <label class="setting-label">Output Format</label>
+                        <select class="setting-control" id="converterFormat">
+                            <option value="mp3">MP3</option>
+                            <option value="flac">FLAC</option>
+                            <option value="ogg">OGG</option>
+                            <option value="m4a">M4A</option>
+                            <option value="wav">WAV</option>
+                        </select>
+                    </div>
+                    <div class="setting-item">
+                        <label class="setting-label">Quality</label>
+                        <select class="setting-control" id="converterQuality">
+                            <option value="320">320 kbps</option>
+                            <option value="256">256 kbps</option>
+                            <option value="192">192 kbps</option>
+                            <option value="128">128 kbps</option>
+                        </select>
+                    </div>
+                    <button class="glow-button" onclick="convertFiles()">
+                        🔄 Convert Files
+                    </button>
+                </div>
+            </div>
+
+            <div id="settings" class="tab-content">
+                <div class="settings-grid">
+                    <div class="setting-group">
+                        <h4>🎵 Audio Settings</h4>
+                        <div class="setting-item">
+                            <label class="setting-label">Audio Quality</label>
+                            <select class="setting-control" id="qualitySelect">
+                                <option value="320">320 kbps (Best Quality)</option>
+                                <option value="256">256 kbps (High Quality)</option>
+                                <option value="192">192 kbps (Good Quality)</option>
+                                <option value="128">128 kbps (Standard)</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label class="setting-label">Audio Format</label>
+                            <select class="setting-control" id="formatSelect">
+                                <option value="mp3">MP3 (Most Compatible)</option>
+                                <option value="flac">FLAC (Lossless)</option>
+                                <option value="ogg">OGG (Open Source)</option>
+                                <option value="m4a">M4A (Apple)</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label class="setting-label">Sample Rate</label>
+                            <select class="setting-control" id="sampleRateSelect">
+                                <option value="44100">44.1 kHz (CD Quality)</option>
+                                <option value="48000">48 kHz (Professional)</option>
+                                <option value="96000">96 kHz (High Resolution)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="setting-group">
+                        <h4>📁 File Organization</h4>
+                        <div class="setting-item">
+                            <label class="setting-label">Filename Template</label>
+                            <select class="setting-control" id="filenameSelect">
+                                <option value="{artist} - {title}">{artist} - {title}</option>
+                                <option value="{title} - {artist}">{title} - {artist}</option>
+                                <option value="{artist} - {album} - {title}">{artist} - {album} - {title}</option>
+                                <option value="{track} - {artist} - {title}">{track} - {artist} - {title}</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label class="setting-label">Folder Structure</label>
+                            <select class="setting-control" id="folderSelect">
+                                <option value="flat">All files in one folder</option>
+                                <option value="artist">Artist/{artist}/</option>
+                                <option value="album">Artist/{artist}/{album}/</option>
+                                <option value="playlist">Playlists/{playlist}/</option>
+                                <option value="genre">Genre/{genre}/</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label class="setting-label">Replace Invalid Characters</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="replaceChars" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="setting-group">
+                        <h4>🏷️ Metadata Settings</h4>
+                        <div class="setting-item">
+                            <label class="setting-label">Embed Album Art</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="embedArt" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <label class="setting-label">Album Art Size</label>
+                            <select class="setting-control" id="artSize">
+                                <option value="300">300x300 (Small)</option>
+                                <option value="640">640x640 (Medium)</option>
+                                <option value="1000">1000x1000 (Large)</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label class="setting-label">Write Extended Tags</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="extendedTags" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="setting-group">
+                        <h4>⚡ Performance Settings</h4>
+                        <div class="setting-item">
+                            <label class="setting-label">Concurrent Downloads</label>
+                            <select class="setting-control" id="concurrentDownloads">
+                                <option value="1">1 (Slowest, Most Stable)</option>
+                                <option value="2">2 (Recommended)</option>
+                                <option value="4">4 (Faster)</option>
+                                <option value="8">8 (Fastest, May Cause Issues)</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label class="setting-label">Retry Failed Downloads</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="retryFailed" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <label class="setting-label">Auto-Create ZIP</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="autoZip" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="setting-group">
+                        <h4>🔧 Advanced Settings</h4>
+                        <div class="setting-item">
+                            <label class="setting-label">Spotify Client ID</label>
+                            <input type="text" class="setting-control" id="clientId" placeholder="Enter your Spotify Client ID">
+                        </div>
+                        <div class="setting-item">
+                            <label class="setting-label">Spotify Client Secret</label>
+                            <input type="password" class="setting-control" id="clientSecret" placeholder="Enter your Spotify Client Secret">
+                        </div>
+                        <div class="setting-item">
+                            <label class="setting-label">Download Directory</label>
+                            <input type="text" class="setting-control" id="downloadDir" placeholder="Downloads/Music/">
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 2rem; text-align: center;">
+                    <button class="glow-button" onclick="saveSettings()">
+                        💾 Save Settings
+                    </button>
+                    <button class="glow-button" onclick="resetSettings()" style="background: var(--error-color);">
+                        🔄 Reset to Default
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Global variables
+        let isConnected = false;
+        let currentTheme = 'dark';
+        let performanceMode = 'high';
+        let downloadQueue = [];
+        let currentDownload = null;
+        let userPlaylists = [];
+        let downloadedFiles = [];
+        let isDownloading = false;
+        let isPaused = false;
+        let ws = null; // WebSocket connection for real-time updates
+
+        // API Configuration
+        const API_BASE = 'http://localhost:3000/api';
+        const SPOTIFY_CLIENT_ID = 'f585c47987f3453cbf1b52ef00d17949';
+        const SPOTIFY_REDIRECT_URI = 'http://localhost:3000/callback';
+
+        // Initialize the application
+        window.addEventListener('DOMContentLoaded', function() {
+            loadSettings();
+            initializeWebSocket();
+            checkAuthStatus();
+            loadLibrary();
+            updateStats();
+        });
+
+        // WebSocket for real-time updates
+        function initializeWebSocket() {
+            try {
+                ws = new WebSocket('ws://localhost:3000');
+                
+                ws.onopen = function() {
+                    showNotification('Connected to download server', 'success');
+                };
+                
+                ws.onmessage = function(event) {
+                    const data = JSON.parse(event.data);
+                    handleWebSocketMessage(data);
+                };
+                
+                ws.onclose = function() {
+                    showNotification('Disconnected from server', 'error');
+                    // Attempt to reconnect after 5 seconds
+                    setTimeout(initializeWebSocket, 5000);
+                };
+                
+                ws.onerror = function(error) {
+                    console.error('WebSocket error:', error);
+                };
+            } catch (error) {
+                console.error('Failed to initialize WebSocket:', error);
+            }
+        }
+
+        function handleWebSocketMessage(data) {
+            switch (data.type) {
+                case 'download_progress':
+                    updateDownloadProgress(data.payload);
+                    break;
+                case 'download_complete':
+                    handleDownloadComplete(data.payload);
+                    break;
+                case 'download_error':
+                    handleDownloadError(data.payload);
+                    break;
+                case 'playlist_loaded':
+                    handlePlaylistLoaded(data.payload);
+                    break;
+            }
+        }
+
+        // Theme management
+        function changeTheme() {
+            const themeSelector = document.getElementById('themeSelector');
+            const selectedTheme = themeSelector.value;
+            document.body.setAttribute('data-theme', selectedTheme);
+            currentTheme = selectedTheme;
+            localStorage.setItem('theme', selectedTheme);
+            showNotification(`Theme changed to ${selectedTheme}`, 'info');
+        }
+
+        function togglePerformance() {
+            performanceMode = performanceMode === 'high' ? 'low' : 'high';
+            document.body.setAttribute('data-performance', performanceMode);
+            localStorage.setItem('performance', performanceMode);
+            
+            const message = performanceMode === 'low' ? 
+                'Low-end mode enabled - animations disabled' : 
+                'High performance mode enabled';
+            showNotification(message, 'info');
+        }
+
+        // Tab management
+        function showTab(tabName) {
+            // Remove active class from all tabs and content
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            // Add active class to clicked tab and corresponding content
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+            
+            // Load content based on tab
+            switch (tabName) {
+                case 'playlists':
+                    loadUserPlaylists();
+                    break;
+                case 'library':
+                    loadLibrary();
+                    break;
+                case 'downloads':
+                    updateDownloadList();
+                    break;
+            }
+        }
+
+        // Spotify authentication
+        async function connectSpotify() {
+            try {
+                const button = event.target;
+                const originalText = button.textContent;
+                button.innerHTML = '<span class="loading"></span> Connecting...';
+                button.disabled = true;
+                
+                // Check if we have stored credentials
+                const clientId = document.getElementById('clientId').value || SPOTIFY_CLIENT_ID;
+                const clientSecret = document.getElementById('clientSecret').value;
+                
+                if (!clientId || !clientSecret) {
+                    showNotification('Please enter your Spotify Client ID and Secret in Settings', 'error');
+                    button.textContent = originalText;
+                    button.disabled = false;
+                    return;
+                }
+                
+                // Redirect to Spotify authorization
+                const scopes = 'playlist-read-private playlist-read-collaborative user-library-read';
+                const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=code&redirect_uri=${encodeURIComponent(SPOTIFY_REDIRECT_URI)}&scope=${encodeURIComponent(scopes)}`;
+                
+                window.location.href = authUrl;
+                
+            } catch (error) {
+                console.error('Spotify connection error:', error);
+                showNotification('Failed to connect to Spotify', 'error');
+                button.textContent = originalText;
+                button.disabled = false;
+            }
+        }
+
+        async function checkAuthStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/auth/status`);
+                const data = await response.json();
+                
+                if (data.authenticated) {
+                    isConnected = true;
+                    document.getElementById('statusDot').classList.add('connected');
+                    document.getElementById('statusText').textContent = 'Connected';
+                    document.getElementById('authSection').style.display = 'none';
+                    loadUserPlaylists();
+                }
+            } catch (error) {
+                console.error('Auth status check failed:', error);
+            }
+        }
+
+        // Playlist management
+        async function loadUserPlaylists() {
+            if (!isConnected) return;
+            
+            try {
+                const response = await fetch(`${API_BASE}/playlists`);
+                const playlists = await response.json();
+                
+                userPlaylists = playlists;
+                displayPlaylists(playlists);
+                updateStats();
+                
+            } catch (error) {
+                console.error('Failed to load playlists:', error);
+                showNotification('Failed to load playlists', 'error');
+            }
+        }
+
+        function displayPlaylists(playlists) {
+            const playlistGrid = document.getElementById('playlistGrid');
+            
+            playlistGrid.innerHTML = playlists.map(playlist => `
+                <div class="playlist-item">
+                    <div class="playlist-header">
+                        <div class="playlist-icon">${getPlaylistIcon(playlist.name)}</div>
+                        <div class="playlist-title">${playlist.name}</div>
+                        <div class="playlist-meta">
+                            <span>${playlist.tracks.total} tracks</span>
+                            <span>${playlist.owner.display_name}</span>
+                        </div>
+                    </div>
+                    <div class="playlist-actions">
+                        <button class="playlist-toggle" onclick="togglePlaylistSongs('${playlist.id}')">
+                            📋 View Songs
+                        </button>
+                        <button class="glow-button" onclick="downloadPlaylist('${playlist.id}')" style="flex: 1;">
+                            📥 Download
+                        </button>
+                    </div>
+                    <div class="playlist-songs" id="songs-${playlist.id}">
+                        <!-- Songs will be loaded here -->
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function getPlaylistIcon(name) {
+            const icons = {
+                'workout': '💪', 'gym': '🏋️', 'running': '🏃',
+                'chill': '🌙', 'relax': '😌', 'sleep': '😴',
+                'party': '🎉', 'dance': '💃', 'club': '🕺',
+                'study': '📚', 'focus': '🎯', 'work': '💼',
+                'road': '🚗', 'travel': '✈️', 'drive': '🛣️',
+                'love': '💕', 'heart': '❤️', 'romantic': '💝',
+                'rock': '🎸', 'pop': '🎤', 'jazz': '🎷',
+                'hip': '🎧', 'rap': '🎤', 'electronic': '🎛️'
+            };
+            
+            const lowercaseName = name.toLowerCase();
+            for (const [keyword, icon] of Object.entries(icons)) {
+                if (lowercaseName.includes(keyword)) {
+                    return icon;
+                }
+            }
+            return '🎵';
+        }
+
+        async function togglePlaylistSongs(playlistId) {
+            const songsContainer = document.getElementById(`songs-${playlistId}`);
+            
+            if (songsContainer.classList.contains('expanded')) {
+                songsContainer.classList.remove('expanded');
+                return;
+            }
+            
+            try {
+                // Show loading state
+                songsContainer.innerHTML = '<div style="padding: 2rem; text-align: center;"><span class="loading"></span> Loading songs...</div>';
+                songsContainer.classList.add('expanded');
+                
+                const response = await fetch(`${API_BASE}/playlists/${playlistId}/tracks`);
+                const tracks = await response.json();
+                
+                songsContainer.innerHTML = tracks.items.map(item => {
+                    const track = item.track;
+                    return `
+                        <div class="song-item">
+                            <div class="song-info">
+                                <div class="song-title">${track.name}</div>
+                                <div class="song-artist">${track.artists.map(a => a.name).join(', ')}</div>
+                            </div>
+                            <div class="song-actions">
+                                <span class="song-duration">${formatDuration(track.duration_ms)}</span>
+                                <button class="mini-button" onclick="downloadSong('${track.id}', '${track.name}', '${track.artists[0].name}')" title="Download">
+                                    📥
+                                </button>
+                                <button class="mini-button" onclick="previewSong('${track.preview_url}')" title="Preview">
+                                    ▶️
+                                </button>
+                            </div>
+                            <div class="download-status" id="status-${track.id}"></div>
+                        </div>
+                    `;
+                }).join('');
+                
+            } catch (error) {
+                console.error('Failed to load playlist songs:', error);
+                songsContainer.innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--error-color);">Failed to load songs</div>';
+            }
+        }
+
+        function formatDuration(ms) {
+            const minutes = Math.floor(ms / 60000);
+            const seconds = Math.floor((ms % 60000) / 1000);
+            return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        // Download functionality
+        async function downloadPlaylist(playlistId) {
+            if (!isConnected) {
+                showNotification('Please connect to Spotify first', 'error');
+                return;
+            }
+            
+            try {
+                showNotification('Starting playlist download...', 'info');
+                
+                const response = await fetch(`${API_BASE}/download/playlist`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        playlistId: playlistId,
+                        quality: document.getElementById('qualitySelect').value,
+                        format: document.getElementById('formatSelect').value,
+                        settings: getDownloadSettings()
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification('Playlist added to download queue', 'success');
+                    showTab('downloads');
+                    document.querySelector('[onclick="showTab(\'downloads\')"]').click();
+                } else {
+                    showNotification(result.error || 'Failed to start download', 'error');
+                }
+                
+            } catch (error) {
+                console.error('Download error:', error);
+                showNotification('Failed to start download', 'error');
+            }
+        }
+
+        async function downloadSong(trackId, title, artist) {
+            if (!isConnected) {
+                showNotification('Please connect to Spotify first', 'error');
+                return;
+            }
+            
+            try {
+                const statusElement = document.getElementById(`status-${trackId}`);
+                statusElement.classList.add('pending');
+                
+                const response = await fetch(`${API_BASE}/download/track`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        trackId: trackId,
+                        title: title,
+                        artist: artist,
+                        quality: document.getElementById('qualitySelect').value,
+                        format: document.getElementById('formatSelect').value,
+                        settings: getDownloadSettings()
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    statusElement.classList.remove('pending');
+                    statusElement.classList.add('downloading');
+                    showNotification(`Started downloading: ${title}`, 'success');
+                } else {
+                    statusElement.classList.remove('pending');
+                    statusElement.classList.add('error');
+                    showNotification(result.error || 'Failed to start download', 'error');
+                }
+                
+            } catch (error) {
+                console.error('Download error:', error);
+                showNotification('Failed to start download', 'error');
+            }
+        }
+
+        function getDownloadSettings() {
+            return {
+                quality: document.getElementById('qualitySelect').value,
+                format: document.getElementById('formatSelect').value,
+                filename: document.getElementById('filenameSelect').value,
+                folder: document.getElementById('folderSelect').value,
+                embedArt: document.getElementById('embedArt').checked,
+                artSize: document.getElementById('artSize').value,
+                extendedTags: document.getElementById('extendedTags').checked,
+                concurrent: document.getElementById('concurrentDownloads').value,
+                autoZip: document.getElementById('autoZip').checked
+            };
+        }
+
+        // Search functionality
+        async function searchContent() {
+            const query = document.getElementById('searchInput').value.trim();
+            const type = document.getElementById('searchType').value;
+            const market = document.getElementById('searchMarket').value;
+            
+            if (!query) {
+                showNotification('Please enter a search query', 'error');
+                return;
+            }
+            
+            try {
+                const resultsContainer = document.getElementById('searchResults');
+                resultsContainer.innerHTML = '<div style="padding: 2rem; text-align: center;"><span class="loading"></span> Searching...</div>';
+                resultsContainer.style.display = 'block';
+                
+                const response = await fetch(`${API_BASE}/search?q=${encodeURIComponent(query)}&type=${type}&market=${market}`);
+                const results = await response.json();
+                
+                displaySearchResults(results, type);
+                
+            } catch (error) {
+                console.error('Search error:', error);
+                showNotification('Search failed', 'error');
+            }
+        }
+
+        function displaySearchResults(results, type) {
+            const resultsContainer = document.getElementById('searchResults');
+            
+            if (type === 'track') {
+                resultsContainer.innerHTML = results.tracks.items.map(track => `
+                    <div class="song-item">
+                        <div class="song-info">
+                            <div class="song-title">${track.name}</div>
+                            <div class="song-artist">${track.artists.map(a => a.name).join(', ')} • ${track.album.name}</div>
+                        </div>
+                        <div class="song-actions">
+                            <span class="song-duration">${formatDuration(track.duration_ms)}</span>
+                            <button class="mini-button" onclick="downloadSong('${track.id}', '${track.name}', '${track.artists[0].name}')" title="Download">
+                                📥
+                            </button>
+                            <button class="mini-button" onclick="previewSong('${track.preview_url}')" title="Preview">
+                                ▶️
+                            </button>
+                        </div>
+                        <div class="download-status" id="status-${track.id}"></div>
+                    </div>
+                `).join('');
+            }
+            // Add other result types (artist, album, playlist) here
+        }
+
+        // Audio preview
+        let currentAudio = null;
+        function previewSong(previewUrl) {
+            if (!previewUrl) {
+                showNotification('No preview available', 'error');
+                return;
+            }
+            
+            if (currentAudio) {
+                currentAudio.pause();
+            }
+            
+            currentAudio = new Audio(previewUrl);
+            currentAudio.play();
+            
+            // Stop after 30 seconds
+            setTimeout(() => {
+                if (currentAudio) {
+                    currentAudio.pause();
+                }
+            }, 30000);
+        }
+
+        // Download progress handling
+        function updateDownloadProgress(data) {
+            const { trackId, progress, status } = data;
+            
+            // Update individual song status
+            const statusElement = document.getElementById(`status-${trackId}`);
+            if (statusElement) {
+                statusElement.className = `download-status ${status}`;
+            }
+            
+            // Update overall progress
+            updateOverallProgress();
+        }
+
+        function updateOverallProgress() {
+            const total = downloadQueue.length;
+            const completed = downloadQueue.filter(item => item.status === 'completed').length;
+            const percentage = total > 0 ? (completed / total) * 100 : 0;
+            
+            document.getElementById('progressFill').style.width = percentage + '%';
+            document.getElementById('progressPercent').textContent = Math.round(percentage) + '%';
+            document.getElementById('progressText').textContent = 
+                `Downloaded ${completed} of ${total} songs`;
+        }
+
+        function handleDownloadComplete(data) {
+            const { trackId, filename, size } = data;
+            
+            // Update download queue
+            const queueItem = downloadQueue.find(item => item.id === trackId);
+            if (queueItem) {
+                queueItem.status = 'completed';
+                queueItem.filename = filename;
+                queueItem.size = size;
+            }
+            
+            // Add to library
+            downloadedFiles.push({
+                id: trackId,
+                filename: filename,
+                size: size,
+                downloadDate: new Date().toISOString()
+            });
+            
+            updateStats();
+            saveLibrary();
+            
+            showNotification(`Download completed: ${filename}`, 'success');
+        }
+
+        function handleDownloadError(data) {
+            const { trackId, error } = data;
+            
+            const queueItem = downloadQueue.find(item => item.id === trackId);
+            if (queueItem) {
+                queueItem.status = 'error';
+                queueItem.error = error;
+            }
+            
+            showNotification(`Download failed: ${error}`, 'error');
+        }
+
+        // Library management
+        function loadLibrary() {
+            const savedLibrary = localStorage.getItem('downloadedFiles');
+            if (savedLibrary) {
+                downloadedFiles = JSON.parse(savedLibrary);
+                displayLibrary();
+            }
+        }
+
+        function saveLibrary() {
+            localStorage.setItem('downloadedFiles', JSON.stringify(downloadedFiles));
+        }
+
+        function displayLibrary() {
+            const libraryContent = document.getElementById('libraryContent');
+            
+            if (downloadedFiles.length === 0) {
+                libraryContent.innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--secondary-text);">No downloaded files yet</div>';
+                return;
+            }
+            
+            libraryContent.innerHTML = downloadedFiles.map(file => `
+                <div class="song-item">
+                    <div class="song-info">
+                        <div class="song-title">${file.filename}</div>
+                        <div class="song-artist">Downloaded: ${new Date(file.downloadDate).toLocaleDateString()}</div>
+                    </div>
+                    <div class="song-actions">
+                        <span class="song-duration">${formatFileSize(file.size)}</span>
+                        <button class="mini-button" onclick="openFile('${file.filename}')" title="Open">
+                            📂
+                        </button>
+                        <button class="mini-button" onclick="deleteFile('${file.id}')" title="Delete">
+                        🗑️
+                        </button>
+                    </div>
+                    <div class="download-status completed"></div>
+                </div>
+            `).join('');
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function openFile(filename) {
+            // This would typically open the file in the default application
+            showNotification(`Opening: ${filename}`, 'info');
+        }
+
+        function deleteFile(fileId) {
+            if (confirm('Are you sure you want to delete this file?')) {
+                downloadedFiles = downloadedFiles.filter(file => file.id !== fileId);
+                saveLibrary();
+                displayLibrary();
+                updateStats();
+                showNotification('File deleted', 'success');
+            }
+        }
+
+        // Download queue management
+        function updateDownloadList() {
+            const downloadList = document.getElementById('downloadList');
+            
+            if (downloadQueue.length === 0) {
+                downloadList.innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--secondary-text);">No downloads in queue</div>';
+                return;
+            }
+            
+            downloadList.innerHTML = downloadQueue.map(item => `
+                <div class="song-item">
+                    <div class="song-info">
+                        <div class="song-title">${item.title}</div>
+                        <div class="song-artist">${item.artist}</div>
+                    </div>
+                    <div class="song-actions">
+                        <span class="song-duration">${item.status}</span>
+                        <button class="mini-button" onclick="removeFromQueue('${item.id}')" title="Remove">
+                            ❌
+                        </button>
+                    </div>
+                    <div class="download-status ${item.status}"></div>
+                </div>
+            `).join('');
+        }
+
+        function removeFromQueue(trackId) {
+            downloadQueue = downloadQueue.filter(item => item.id !== trackId);
+            updateDownloadList();
+            updateStats();
+        }
+
+        function pauseDownloads() {
+            isPaused = !isPaused;
+            const button = event.target;
+            button.textContent = isPaused ? '▶️ Resume' : '⏸️ Pause';
+            
+            if (ws) {
+                ws.send(JSON.stringify({
+                    type: 'pause_downloads',
+                    paused: isPaused
+                }));
+            }
+            
+            showNotification(isPaused ? 'Downloads paused' : 'Downloads resumed', 'info');
+        }
+
+        function clearCompleted() {
+            const completedCount = downloadQueue.filter(item => item.status === 'completed').length;
+            downloadQueue = downloadQueue.filter(item => item.status !== 'completed');
+            updateDownloadList();
+            updateStats();
+            showNotification(`Cleared ${completedCount} completed downloads`, 'success');
+        }
+
+        // File converter functionality
+        function convertFiles() {
+            const fileInput = document.getElementById('converterFiles');
+            const format = document.getElementById('converterFormat').value;
+            const quality = document.getElementById('converterQuality').value;
+            
+            if (!fileInput.files.length) {
+                showNotification('Please select files to convert', 'error');
+                return;
+            }
+            
+            showNotification(`Converting ${fileInput.files.length} files to ${format.toUpperCase()}...`, 'info');
+            
+            // This would typically send files to a conversion service
+            // For now, we'll simulate the conversion process
+            setTimeout(() => {
+                showNotification('Conversion completed!', 'success');
+            }, 3000);
+        }
+
+        // Settings management
+        function loadSettings() {
+            const savedSettings = localStorage.getItem('downloaderSettings');
+            if (savedSettings) {
+                const settings = JSON.parse(savedSettings);
+                
+                // Apply saved settings to form elements
+                Object.keys(settings).forEach(key => {
+                    const element = document.getElementById(key);
+                    if (element) {
+                        if (element.type === 'checkbox') {
+                            element.checked = settings[key];
+                        } else {
+                            element.value = settings[key];
+                        }
+                    }
+                });
+            }
+            
+            // Load theme and performance settings
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            const savedPerformance = localStorage.getItem('performance') || 'high';
+            
+            document.body.setAttribute('data-theme', savedTheme);
+            document.body.setAttribute('data-performance', savedPerformance);
+            document.getElementById('themeSelector').value = savedTheme;
+            
+            currentTheme = savedTheme;
+            performanceMode = savedPerformance;
+        }
+
+        function saveSettings() {
+            const settings = {
+                qualitySelect: document.getElementById('qualitySelect').value,
+                formatSelect: document.getElementById('formatSelect').value,
+                sampleRateSelect: document.getElementById('sampleRateSelect').value,
+                filenameSelect: document.getElementById('filenameSelect').value,
+                folderSelect: document.getElementById('folderSelect').value,
+                replaceChars: document.getElementById('replaceChars').checked,
+                embedArt: document.getElementById('embedArt').checked,
+                artSize: document.getElementById('artSize').value,
+                extendedTags: document.getElementById('extendedTags').checked,
+                concurrentDownloads: document.getElementById('concurrentDownloads').value,
+                retryFailed: document.getElementById('retryFailed').checked,
+                autoZip: document.getElementById('autoZip').checked,
+                clientId: document.getElementById('clientId').value,
+                clientSecret: document.getElementById('clientSecret').value,
+                downloadDir: document.getElementById('downloadDir').value
+            };
+            
+            localStorage.setItem('downloaderSettings', JSON.stringify(settings));
+            showNotification('Settings saved successfully!', 'success');
+        }
+
+        function resetSettings() {
+            if (confirm('Are you sure you want to reset all settings to default?')) {
+                localStorage.removeItem('downloaderSettings');
+                
+                // Reset form values to defaults
+                document.getElementById('qualitySelect').value = '320';
+                document.getElementById('formatSelect').value = 'mp3';
+                document.getElementById('sampleRateSelect').value = '44100';
+                document.getElementById('filenameSelect').value = '{artist} - {title}';
+                document.getElementById('folderSelect').value = 'flat';
+                document.getElementById('replaceChars').checked = true;
+                document.getElementById('embedArt').checked = true;
+                document.getElementById('artSize').value = '640';
+                document.getElementById('extendedTags').checked = true;
+                document.getElementById('concurrentDownloads').value = '2';
+                document.getElementById('retryFailed').checked = true;
+                document.getElementById('autoZip').checked = true;
+                document.getElementById('clientId').value = '';
+                document.getElementById('clientSecret').value = '';
+                document.getElementById('downloadDir').value = '';
+                
+                showNotification('Settings reset to default', 'success');
+            }
+        }
+
+        // Utility functions
+        function updateStats() {
+            document.getElementById('totalPlaylists').textContent = userPlaylists.length;
+            document.getElementById('totalSongs').textContent = userPlaylists.reduce((sum, playlist) => sum + playlist.tracks.total, 0);
+            document.getElementById('downloadedSongs').textContent = downloadedFiles.length;
+            document.getElementById('queueSize').textContent = downloadQueue.length;
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+
+        function refreshPlaylists() {
+            if (isConnected) {
+                showNotification('Refreshing playlists...', 'info');
+                loadUserPlaylists();
+            } else {
+                showNotification('Please connect to Spotify first', 'error');
+            }
+        }
+
+        // Playlist filtering
+        document.getElementById('playlistFilter').addEventListener('input', function(e) {
+            const filter = e.target.value.toLowerCase();
+            const playlistItems = document.querySelectorAll('.playlist-item');
+            
+            playlistItems.forEach(item => {
+                const title = item.querySelector('.playlist-title').textContent.toLowerCase();
+                if (title.includes(filter)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+
+        // Library search and sorting
+        document.getElementById('librarySearch').addEventListener('input', function(e) {
+            const filter = e.target.value.toLowerCase();
+            const libraryItems = document.querySelectorAll('#libraryContent .song-item');
+            
+            libraryItems.forEach(item => {
+                const title = item.querySelector('.song-title').textContent.toLowerCase();
+                if (title.includes(filter)) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+
+        document.getElementById('librarySort').addEventListener('change', function(e) {
+            const sortBy = e.target.value;
+            
+            downloadedFiles.sort((a, b) => {
+                switch (sortBy) {
+                    case 'recent':
+                        return new Date(b.downloadDate) - new Date(a.downloadDate);
+                    case 'title':
+                        return a.filename.localeCompare(b.filename);
+                    case 'size':
+                        return b.size - a.size;
+                    default:
+                        return 0;
+                }
+            });
+            
+            displayLibrary();
+        });
+
+        // Search functionality
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchContent();
+            }
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey || e.metaKey) {
+                switch (e.key) {
+                    case 'f':
+                        e.preventDefault();
+                        document.getElementById('searchInput').focus();
+                        break;
+                    case 'r':
+                        e.preventDefault();
+                        refreshPlaylists();
+                        break;
+                    case 's':
+                        e.preventDefault();
+                        saveSettings();
+                        break;
+                }
+            }
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            // Adjust layout for mobile devices
+            if (window.innerWidth <= 768) {
+                document.body.classList.add('mobile');
+            } else {
+                document.body.classList.remove('mobile');
+            }
+        });
+
+        // Handle page visibility changes
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                // Pause animations when tab is not visible
+                document.body.style.animationPlayState = 'paused';
+            } else {
+                // Resume animations when tab becomes visible
+                document.body.style.animationPlayState = 'running';
+            }
+        });
+
+        // Clean up on page unload
+        window.addEventListener('beforeunload', function() {
+            if (ws) {
+                ws.close();
+            }
+            if (currentAudio) {
+                currentAudio.pause();
+            }
+        });
+
+        // Initialize tooltips
+        function initializeTooltips() {
+            const tooltipElements = document.querySelectorAll('[title]');
+            tooltipElements.forEach(element => {
+                element.addEventListener('mouseenter', function(e) {
+                    const tooltip = document.createElement('div');
+                    tooltip.className = 'tooltip';
+                    tooltip.textContent = e.target.getAttribute('title');
+                    tooltip.style.cssText = `
+                        position: absolute;
+                        background: var(--card-bg);
+                        color: var(--primary-text);
+                        padding: 0.5rem;
+                        border-radius: var(--border-radius);
+                        font-size: 0.8rem;
+                        pointer-events: none;
+                        z-index: 1000;
+                        border: 1px solid var(--accent-bg);
+                        box-shadow: var(--shadow);
+                    `;
+                    
+                    document.body.appendChild(tooltip);
+                    
+                    const rect = e.target.getBoundingClientRect();
+                    tooltip.style.top = (rect.top - tooltip.offsetHeight - 10) + 'px';
+                    tooltip.style.left = (rect.left + rect.width / 2 - tooltip.offsetWidth / 2) + 'px';
+                    
+                    e.target.addEventListener('mouseleave', function() {
+                        tooltip.remove();
+                    });
+                });
+            });
+        }
+
+        // Initialize tooltips after DOM is loaded
+        setTimeout(initializeTooltips, 1000);
+
+        // Error handling
+        window.addEventListener('error', function(e) {
+            console.error('Application error:', e.error);
+            showNotification('An error occurred. Please refresh the page.', 'error');
+        });
+
+        // Service Worker registration for offline support
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').then(function(registration) {
+                console.log('Service Worker registered with scope:', registration.scope);
+            }).catch(function(error) {
+                console.log('Service Worker registration failed:', error);
+            });
+        }
+
+    </script>
+</body>
+</html>
